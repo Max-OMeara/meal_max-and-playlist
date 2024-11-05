@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from meal_max.meal_max.models.kitchen_model import (
+from meal_max.models.kitchen_model import (
     Meal,
     create_meal,
     clear_meals,
@@ -37,7 +37,7 @@ def mock_cursor(mocker):
     def mock_get_db_connection():
         yield mock_conn  # Yield the mocked connection object
 
-    mocker.patch("meal_max.kitchen.models.kitchen_model.get_db_connection", mock_get_db_connection)
+    mocker.patch("meal_max.utils.sql_utils.get_db_connection", mock_get_db_connection)
 
     return mock_cursor  # Return the mock cursor so we can set expectations per test
 
@@ -126,8 +126,8 @@ def test_get_leaderboard_sort_by_wins(mock_cursor):
     # Simulate data in the database
     mock_cursor.fetchall.return_value = [
         (2, "Meal B", "Cuisine B", 15.0, "MED", 10, 7, 0.7),
-        (3, "Meal C", "Cuisine C", 20.0, "HIGH", 8, 6, 0.75),
         (1, "Meal A", "Cuisine A", 10.0, "LOW", 5, 3, 0.6),
+        (3, "Meal C", "Cuisine C", 20.0, "HIGH", 8, 6, 0.75),
     ]
 
     # Call the get_leaderboard function
