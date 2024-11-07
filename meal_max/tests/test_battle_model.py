@@ -115,29 +115,42 @@ def test_clear_combatants_empty_list(battle_model):
 
 @patch('meal_max.models.battle_model.get_random')
 @patch('meal_max.models.battle_model.update_meal_stats')
-def test_battle(mock_update_meal_stats, mock_get_random, battle_model, sample_meal1, sample_meal2):
-    """Test conducting a battle with predictable outcome."""
+@patch('meal_max.models.battle_model.logger')
+def test_battle(mock_logger, mock_update_meal_stats, mock_get_random, battle_model, sample_meal1, sample_meal2):
+    """Test conducting a battle with proper winner determination."""
     # Prepare combatants
     battle_model.prep_combatant(sample_meal1)
     battle_model.prep_combatant(sample_meal2)
 
-    # Mock get_random to return a fixed value
-    mock_get_random.return_value = 0.05  # Lower value for testing
+    # Mock get_random to return a specific value
+    mock_get_random.return_value = 0.15  # Random number for testing
 
-    # Mock get_battle_score to control scores
-    with patch.object(BattleModel, 'get_battle_score', side_effect=[80.0, 70.0]):
+    # Mock battle scores for combatants
+    score_1 = 80.0
+    score_2 = 70.0
+    with patch.object(BattleModel, 'get_battle_score', side_effect=[score_1, score_2]):
         winner = battle_model.battle()
 
-    # Since delta is (80 - 70)/100 = 0.1, which is greater than 0.05
-    # The winner should be sample_meal1 ('Pizza')
-    assert winner == sample_meal1.meal
-    assert battle_model.get_combatants() == [sample_meal1], "Loser should be removed from combatants"
+    # Calculate expected results
+    delta = abs(score_1 - score_2) / 100  # Calculate delta
+    expected_winner = sample_meal1 if delta > 0.15 else sample_meal2
+    expected_loser = sample_meal2 if expected_winner == sample_meal1 else sample_meal1
 
+    # Assert the correct winner is determined
+    assert winner == expected_winner.meal, (
+        f"Expected winner {expected_winner.meal}, but got {winner}"
+    )
 
-    # # Verify that update_meal_stats was called correctly
-    # mock_update_meal_stats.assert_any_call(sample_meal1.id, 'win')
-    # mock_update_meal_stats.assert_any_call(sample_meal2.id, 'loss')
-    # assert mock_update_meal_stats.call_count == 2
+    # Assert loser is removed from combatants
+    remaining_combatants = battle_model.get_combatants()
+    assert remaining_combatants == [expected_winner], (
+        f"Loser should be removed from combatants. Remaining combatants: {remaining_combatants}"
+    )
+
+    # Verify update_meal_stats was called correctly
+    mock_update_meal_stats.assert_any_call(expected_winner.id, 'win')
+    mock_update_meal_stats.assert_any_call(expected_loser.id, 'loss')
+    assert mock_update_meal_stats.call_count == 2
 
 @patch('meal_max.models.battle_model.get_random')
 @patch('meal_max.models.battle_model.update_meal_stats')
