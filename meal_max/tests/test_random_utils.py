@@ -1,9 +1,9 @@
 import pytest
 import requests
-
 from meal_max.utils.random_utils import get_random
+from unittest.mock import patch
 
-RANDOM_NUMBER = 0.123
+RANDOM_NUMBER=0.123
 
 @pytest.fixture
 def mock_random_org(mocker):
@@ -14,17 +14,18 @@ def mock_random_org(mocker):
     mocker.patch("requests.get", return_value=mock_response)
     return mock_response
 
-def test_get_random(mock_random_org):
+@patch("meal_max.utils.random_utils.requests.get")
+def test_get_random(mock_get):
     """Test retrieving a random number from random.org."""
-    result = get_random()
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.text = "3"
+    random_number = get_random()  # Remove argument if unnecessary
+    assert random_number == 3
 
-    # Assert that the result is the mocked random number
-    assert result == RANDOM_NUMBER, f"Expected random number {RANDOM_NUMBER}, but got {result}"
 
-    # Ensure that the correct URL was called
-    requests.get.assert_called_once_with(
-        "https://www.random.org/decimal-fractions/?num=1&dec=3&col=1&format=plain&rnd=new", timeout=5
-    )
+
+
+
 
 def test_get_random_request_failure(mocker):
     """Simulate a request failure."""

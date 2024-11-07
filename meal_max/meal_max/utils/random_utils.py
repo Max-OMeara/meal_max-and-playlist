@@ -6,6 +6,7 @@ from meal_max.utils.logger import configure_logger
 logger = logging.getLogger(__name__)
 configure_logger(logger)
 
+
 def get_random() -> float:
     """
     Fetches a random float between 0 and 1 from random.org.
@@ -20,11 +21,16 @@ def get_random() -> float:
     url = "https://www.random.org/decimal-fractions/?num=1&dec=2&col=1&format=plain&rnd=new"
 
     try:
+        # Log the request to random.org
         logger.info("Fetching random number from %s", url)
+
         response = requests.get(url, timeout=5)
+
+        # Check if the request was successful
         response.raise_for_status()
 
         random_number_str = response.text.strip()
+
         try:
             random_number = float(random_number_str)
         except ValueError:
