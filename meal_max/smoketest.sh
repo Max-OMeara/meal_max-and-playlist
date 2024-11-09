@@ -78,6 +78,23 @@ create_meal() {
   fi
 }
 
+# Function to update meal stats
+# Newly added
+update_meal_stats() {
+  meal_id=$1
+  result=$2
+
+  echo "Updating meal stats for meal ID ($meal_id) with result ($result)..."
+  response=$(curl -s -X PUT "$BASE_URL/update-meal-stats/$meal_id" -H "Content-Type: application/json" \
+    -d "{\"result\": \"$result\"}")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Meal stats updated successfully for ID ($meal_id)."
+  else
+    echo "Failed to update meal stats for ID ($meal_id)."
+    exit 1
+  fi
+}
+
 # Function to delete a meal by ID
 delete_meal_by_id() {
   meal_id=$1
@@ -92,6 +109,23 @@ delete_meal_by_id() {
   fi
 }
 
+# Function to get a meal by name
+get_meal_by_name() {
+  meal_name=$1
+
+  echo "Getting meal by name ($meal_name)..."
+  response=$(curl -s -X GET "$BASE_URL/get-meal-by-name/$meal_name")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Meal retrieved successfully by name ($meal_name)."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Meal JSON (Name $meal_name):"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Failed to get meal by name ($meal_name)."
+    exit 1
+  fi
+}
 
 # Function to get all meals
 get_all_meals() {
@@ -105,24 +139,6 @@ get_all_meals() {
     fi
   else
     echo "Failed to retrieve meals."
-    exit 1
-  fi
-}
-
-# Function to get a meal by ID
-get_meal_by_id() {
-  meal_id=$1
-
-  echo "Getting meal by ID ($meal_id)..."
-  response=$(curl -s -X GET "$BASE_URL/meals/$meal_id")
-  if echo "$response" | grep -q '"status": "success"'; then
-    echo "Meal retrieved successfully by ID ($meal_id)."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Meal JSON (ID $meal_id):"
-      echo "$response" | jq .
-    fi
-  else
-    echo "Failed to get meal by ID ($meal_id)."
     exit 1
   fi
 }
@@ -149,6 +165,35 @@ prep_combatant() {
   fi
 }
 
+# Function to clear combatants
+# Newly added
+clear_combatants() {
+  echo "Clearing all combatants..."
+  response=$(curl -s -X POST "$BASE_URL/clear-combatants")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Combatants cleared successfully."
+  else
+    echo "Failed to clear combatants."
+    exit 1
+  fi
+}
+
+# Function to get combatants
+# Newly added
+get_combatants() {
+  echo "Retrieving combatants..."
+  response=$(curl -s -X GET "$BASE_URL/get-combatants")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Combatants retrieved successfully."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Combatants JSON:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Failed to retrieve combatants."
+    exit 1
+  fi
+}
 
 # Function to start a battle
 start_battle() {
@@ -203,15 +248,27 @@ create_meal "Tacos" "Mexican" 8.0 "LOW"
 # Get all meals
 get_all_meals
 
-# Prepare meals for battle (assuming meal IDs are 1 and 2)
+# Prepare meals for battle (using meal names)
 prep_combatant "Spaghetti"
 prep_combatant "Sushi"
+
+# Retrieve combatants
+get_combatants # Newly added
 
 # Start the battle
 start_battle
 
 # Get leaderboard
 get_leaderboard
+
+# Update meal stats
+update_meal_stats 1 "win" # Newly added
+
+# Get meal by name
+get_meal_by_name "Spaghetti" # Newly added
+
+# Clear combatants
+clear_combatants # Newly added
 
 # Clean up by deleting meals
 delete_meal_by_id 1

@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from flask import Flask, jsonify, make_response, Response, request
 import os
+from meal_max.models.kitchen_model import update_meal_stats as update_meal_stats_in_db
 
 # from flask_cors import CORS
 
@@ -374,6 +375,36 @@ def get_leaderboard() -> Response:
         )
     except Exception as e:
         app.logger.error(f"Error generating leaderboard: {e}")
+        return make_response(jsonify({"error": str(e)}), 500)
+
+
+@app.route("/api/update-meal-stats/<int:meal_id>", methods=["PUT"])
+def update_meal_stats(meal_id: int) -> Response:
+    """
+    Route to update meal stats for a given meal ID based on battle results.
+
+    Parameters:
+        meal_id (int): ID of the meal to update.
+        result (str): The result of the battle ('win' or 'loss').
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    try:
+        data = request.get_json()
+        result = data.get("result")
+
+        if result not in ["win", "loss"]:
+            return make_response(
+                jsonify({"error": "Result must be 'win' or 'loss'"}), 400
+            )
+
+        # Pass both arguments to the `update_meal_stats` function
+        update_meal_stats_in_db(meal_id, result)
+        return make_response(jsonify({"status": "success"}), 200)
+
+    except Exception as e:
+        app.logger.error(f"Failed to update meal stats: {e}")
         return make_response(jsonify({"error": str(e)}), 500)
 
 
